@@ -1,13 +1,12 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, PersonalityResult, Language } from './types';
-import { PERSONALITIES } from './constants';
 import AnalysisAnimation from './components/AnalysisAnimation';
 import ResultCard from './components/ResultCard';
 import AdUnit from './components/AdUnit';
 import { GoogleGenAI, Type } from "@google/genai";
 
-const STORAGE_KEY = 'sachi_baat_personality_v15'; 
+const STORAGE_KEY = 'sachi_baat_personality_v16'; 
 
 export const LogoIcon = ({ className = "w-24 h-24 mb-6", showGlow = true }) => (
   <div className={`${className} relative animate-slow-fade`}>
@@ -32,6 +31,10 @@ export default function App() {
   const [result, setResult] = useState<PersonalityResult | null>(null);
   const [lang, setLang] = useState<Language>('hi');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Refs to track async sync
+  const apiDataRef = useRef<PersonalityResult | null>(null);
+  const animationFinishedRef = useRef(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -48,27 +51,43 @@ export default function App() {
   const handleStart = () => {
     setResult(null);
     setErrorMessage(null);
+    apiDataRef.current = null;
+    animationFinishedRef.current = false;
     setState(AppState.ANALYZING);
   };
 
+  const tryTransitionToResult = () => {
+    if (apiDataRef.current && animationFinishedRef.current) {
+      setResult(apiDataRef.current);
+      setState(AppState.RESULT);
+    }
+  };
+
   const performAnalysis = async (base64: string) => {
-    // Fix: Initialize GoogleGenAI using process.env.API_KEY directly as per SDK guidelines.
-    // The existence and validity of API_KEY is assumed to be handled by the environment.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const apiKey = process.env.API_KEY;
+
+    if (!apiKey || apiKey === 'undefined') {
+      console.error("Critical: API_KEY is missing in process.env");
+      setErrorMessage(lang === 'hi' ? "System Error: API Key nahi mil rahi. Vercel Dashboard mein 'API_KEY' add karein." : "System Error: API Key not found. Please add it to Vercel environment variables.");
+      setState(AppState.ERROR);
+      return;
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     
     const instructions = lang === 'hi' 
       ? `You are the 'Sachi Baat' Personality Engine. 
-         Analyze the face with surgical detail.
-         STRICT RULE: Do not be overly nice. Be honest about flaws (weaknesses) and strengths.
+         Analyze the face in the image with extreme detail.
+         STRICT RULE: Do not be overly nice. Be raw, honest, and slightly witty.
          
-         OUTPUT MUST BE JSON:
-         - title: Catchy Roman Urdu title.
-         - description: Detailed paragraph in Roman Urdu addressing the user as 'Aap'.
-         - reportDescription: Formal 3rd person analysis.
+         OUTPUT MUST BE VALID JSON:
+         - title: Catchy Roman Urdu title (e.g. 'Azeem Lead' or 'Masoom Shaitan').
+         - description: Paragraph in Roman Urdu addressing the user as 'Aap'.
+         - reportDescription: Formal 3rd person personality summary.
          - darkLine: One raw viral signature line.
-         - traits: Array of 3 strengths.
-         - weaknesses: Array of 2 actual flaws.`
-      : `Analyze the face deeply. Be honest about strengths and flaws. Provide JSON with title, description, reportDescription, darkLine, traits, and weaknesses.`;
+         - traits: Array of 3 key strengths.
+         - weaknesses: Array of 2 actual human flaws.`
+      : `Analyze the face deeply and be honest. Provide JSON with title, description, reportDescription, darkLine, traits, and weaknesses.`;
 
     try {
       const response = await ai.models.generateContent({
@@ -76,7 +95,7 @@ export default function App() {
         contents: {
           parts: [
             { inlineData: { data: base64, mimeType: 'image/jpeg' } },
-            { text: "Detailed personality biometric analysis based on this face. Be raw and real." }
+            { text: "Analyze this person's face and provide a raw, honest personality profile." }
           ]
         },
         config: {
@@ -105,11 +124,12 @@ export default function App() {
         shareHook: "Mera asli aur kadwa sach dekho!"
       };
 
-      setResult(finalResult);
+      apiDataRef.current = finalResult;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(finalResult));
+      tryTransitionToResult();
     } catch (err: any) {
-      console.error("Analysis Error:", err);
-      setErrorMessage(err.message || "Neural Analysis Failed. Check internet connection.");
+      console.error("AI Analysis Failed:", err);
+      setErrorMessage(err.message || "Neural link interrupted. Please try again.");
       setState(AppState.ERROR);
     }
   };
@@ -118,15 +138,17 @@ export default function App() {
     performAnalysis(base64);
   };
 
-  const handleAnalysisComplete = useCallback(() => {
-    // Only transition if we haven't hit an error during async process
-    setState(prev => prev === AppState.ERROR ? AppState.ERROR : AppState.RESULT);
+  const handleAnimationComplete = useCallback(() => {
+    animationFinishedRef.current = true;
+    tryTransitionToResult();
   }, []);
 
   const handleReset = () => {
     localStorage.removeItem(STORAGE_KEY);
     setResult(null);
     setErrorMessage(null);
+    apiDataRef.current = null;
+    animationFinishedRef.current = false;
     setState(AppState.INITIAL);
   };
 
@@ -138,7 +160,7 @@ export default function App() {
       <nav className="w-full flex justify-between items-center px-8 py-6 max-w-7xl animate-slow-fade">
         <div className="flex items-center gap-3">
            <LogoIcon className="w-8 h-8" showGlow={false} />
-           <span className="text-[10px] uppercase tracking-[0.4em] text-white/40 font-bold">Truth Lab v3.0</span>
+           <span className="text-[10px] uppercase tracking-[0.4em] text-white/40 font-bold">Truth Lab v3.1</span>
         </div>
         <div className="flex bg-white/5 rounded-xl border border-white/5 p-1 backdrop-blur-md">
           <button onClick={() => setLang('hi')} className={`px-4 py-2 rounded-lg text-[10px] font-bold tracking-widest transition-all ${lang === 'hi' ? 'bg-purple-600 text-white' : 'text-white/30 hover:text-white'}`}>URDU</button>
@@ -165,15 +187,25 @@ export default function App() {
         )}
 
         {state === AppState.ANALYZING && (
-          <AnalysisAnimation onCapture={handleCapture} onComplete={handleAnalysisComplete} lang={lang} />
+          <div className="w-full flex flex-col items-center gap-6">
+            <AnalysisAnimation onCapture={handleCapture} onComplete={handleAnimationComplete} lang={lang} />
+            {animationFinishedRef.current && !apiDataRef.current && (
+              <div className="text-purple-400 font-bold animate-pulse text-xs tracking-widest uppercase">
+                {lang === 'hi' ? 'Server Response Ka Intezar...' : 'Awaiting Final Neural Signature...'}
+              </div>
+            )}
+          </div>
         )}
 
         {state === AppState.ERROR && (
           <div className="flex flex-col items-center text-center space-y-6 animate-slide-up bg-red-500/10 p-10 rounded-3xl border border-red-500/20 max-w-md">
-            <div className="text-red-500 text-4xl font-bold">!</div>
-            <h2 className="text-2xl font-bebas text-white tracking-widest">SYSTEM ERROR</h2>
+            <div className="text-red-500 text-5xl font-bold">!</div>
+            <h2 className="text-2xl font-bebas text-white tracking-widest uppercase">Analysis Failed</h2>
             <p className="text-white/60 text-sm leading-relaxed">{errorMessage}</p>
-            <button onClick={handleReset} className="px-10 py-4 bg-white text-black font-bold rounded-xl text-xs uppercase tracking-widest">Restart</button>
+            <div className="pt-4 flex flex-col gap-2 w-full">
+               <button onClick={handleReset} className="w-full py-4 bg-white text-black font-bold rounded-xl text-xs uppercase tracking-widest">Retry Process</button>
+               <p className="text-[9px] text-white/20 uppercase">Check if camera and internet are working</p>
+            </div>
           </div>
         )}
 
@@ -186,7 +218,7 @@ export default function App() {
 
       <footer className="w-full py-12 flex flex-col items-center gap-2 border-t border-white/5 bg-black/20 backdrop-blur-xl">
         <p className="text-[10px] text-white/30 uppercase tracking-[0.4em] font-bold">Proprietary Algorithm by Subhan Ahmad</p>
-        <p className="text-[8px] text-white/10 uppercase tracking-[0.6em]">All Real Analysis © 2025</p>
+        <p className="text-[8px] text-white/10 uppercase tracking-[0.6em]">Biometric Processing © 2025</p>
       </footer>
     </div>
   );
