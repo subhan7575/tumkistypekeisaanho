@@ -5,9 +5,17 @@ import App from './App';
 import './index.css';
 
 // Shim process.env for the browser environment to ensure standard SDK access to keys
-// Fix: Use type casting to check for non-standard window.process property to avoid TS error
 if (typeof window !== 'undefined' && !(window as any).process) {
   (window as any).process = { env: {} };
+}
+
+// Diagnostic check for API key presence (doesn't log the key itself)
+if (typeof process !== 'undefined' && process.env) {
+  if (process.env.API_KEY) {
+    console.log("✅ Diagnostic: API_KEY detected in process.env");
+  } else {
+    console.warn("⚠️ Diagnostic: API_KEY is missing from process.env");
+  }
 }
 
 const rootElement = document.getElementById('root');
