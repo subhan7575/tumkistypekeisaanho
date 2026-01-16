@@ -1,38 +1,24 @@
-
 /**
  * 📢 AD CONFIGURATION CENTER (ADS SETTINGS)
- * -------------------------------------------------------------------------
- * Yahan aap apni Google AdSense IDs ya Custom Banner links paste kar sakte hain.
- * Har cheez ke saath uska naam likha hua hai taake aapko mushkil na ho.
  * -------------------------------------------------------------------------
  */
 
 export const AD_CONFIG = {
-  // 1️⃣ GLOBAL PUBLISHER ID: Apna Google AdSense ID yahan dalein (e.g., "ca-pub-1234567890")
-  // Ye main ID hoti hai jo poori site par ads chalane ke liye zaruri hai.
-  AD_CLIENT_ID: "ca-pub-placeholder", 
+  // 1️⃣ GLOBAL PUBLISHER ID: Updated with user's ID
+  AD_CLIENT_ID: "ca-pub-6121799382774662", 
 
-  // 2️⃣ SPECIFIC SLOT IDs: Har jagha ke liye alag ID (e.g., "1234567890")
-  // Google AdSense mein "Display Ads" create karein aur unki IDs yahan paste karein:
+  // 2️⃣ SPECIFIC SLOT IDs: (Replace these with your actual display ad unit IDs from AdSense)
   SLOTS: {
-    // HEADER AD: Website ke sabse oopar (Top) nazar aane wala ad.
-    HEADER: "ca-app-pub-6121799382774662/1649381095",        
-
-    // MIDDLE AD: Result card ke andar, Khoobiyan aur Kharabiyan ke pass.
+    HEADER: "1234567890",        
     MIDDLE: "2345678901",        
-
-    // BOTTOM AD: Website ke sabse neeche, Footer se oopar.
-    BOTTOM: "ca-app-pub-6121799382774662/6371224739",        
-
-    // INTERSTITIAL AD: Download button dabane ke baad 10s wait ke waqt nazar aane wala ad.
-    INTERSTITIAL: "ca-app-pub-6121799382774662/9336299426",  
+    BOTTOM: "5678901234",        
+    INTERSTITIAL: "6789012345",  
   },
 
-  // 3️⃣ CUSTOM BANNER ADS (Agar Google Ads use nahi kar rahe)
-  // Isko tab use karein agar aap apni marzi ki image aur link lagana chahte hain.
+  // 3️⃣ CUSTOM BANNER ADS
   CUSTOM_ADS: {
-    ENABLED: false, // Isko 'true' karein agar image wala ad chalana hai.
-    IMAGE_URL: "https://via.placeholder.com/300x250", // Ad image ka link.
-    REDIRECT_URL: "https://your-link.com" // Click karne par kahan jaye user.
+    ENABLED: false,
+    IMAGE_URL: "https://via.placeholder.com/300x250",
+    REDIRECT_URL: "https://your-link.com"
   }
 };
