@@ -22,10 +22,10 @@ export const AD_CONFIG = {
     MIDDLE: "2345678901",        
 
     // BOTTOM AD: Website ke sabse neeche, Footer se oopar.
-    BOTTOM: "ca-app-pub-6121799382774662/6495331900",        
+    BOTTOM: "ca-app-pub-6121799382774662/6371224739",        
 
     // INTERSTITIAL AD: Download button dabane ke baad 10s wait ke waqt nazar aane wala ad.
-    INTERSTITIAL: "ca-app-pub-6121799382774662/6495331900",  
+    INTERSTITIAL: "ca-app-pub-6121799382774662/9336299426",  
   },
 
   // 3️⃣ CUSTOM BANNER ADS (Agar Google Ads use nahi kar rahe)
