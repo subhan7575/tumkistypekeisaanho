@@ -10,7 +10,7 @@
 export const AD_CONFIG = {
   // 1️⃣ GLOBAL PUBLISHER ID: Apna Google AdSense ID yahan dalein (e.g., "ca-pub-1234567890")
   // Ye main ID hoti hai jo poori site par ads chalane ke liye zaruri hai.
-  AD_CLIENT_ID: "ca-app-pub-6121799382774662~3282026967", 
+  AD_CLIENT_ID: "ca-pub-placeholder", 
 
   // 2️⃣ SPECIFIC SLOT IDs: Har jagha ke liye alag ID (e.g., "1234567890")
   // Google AdSense mein "Display Ads" create karein aur unki IDs yahan paste karein:
