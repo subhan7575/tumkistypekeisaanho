@@ -4,13 +4,18 @@ import App from './App';
 
 // Setup environment variables shim
 if (typeof window !== 'undefined') {
-  // Using 'any' cast for window to bypass strict NodeJS.Process type requirements
   const win = window as any;
   win.process = win.process || { env: {} };
-  win.process.env = win.process.env || {};
   
-  // If the environment is Vercel and variables are provided, they might be here
-  // Note: For static deployments, this normally requires a build step.
+  // Robust check for various injection points
+  const injectedEnv = (window as any)._env_ || (window as any).env || {};
+  win.process.env = {
+    ...win.process.env,
+    ...injectedEnv
+  };
+  
+  // Note: For pure static Vercel deployments, variables aren't injected automatically 
+  // into the browser unless using a framework. 
 }
 
 const container = document.getElementById('root');
