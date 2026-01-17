@@ -5,43 +5,35 @@ export const config = {
 };
 
 export default async function handler(req: any, res: any) {
-  // CORS aur Method check
+  // 1. Method Check
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Environment Variable fetching with fallback
-  const rawKey = process.env.API_KEY || process.env.NEXT_PUBLIC_API_KEY || '';
-  const apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
+  // 2. API Key Fetching (Vercel ke liye)
+  const apiKey = (process.env.API_KEY || '').trim().replace(/^["']|["']$/g, '');
 
-  if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.length < 10) {
-    return res.status(500).json({ 
-      error: 'Vercel API_KEY detect nahi ho rahi. Sir, please check karein ke environment variable ka naam bilkul API_KEY hi hai aur value sahi hai.' 
-    });
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Sir, API_KEY Vercel settings mein nahi mili. Please check variables.' });
   }
 
   try {
-    let body = req.body;
-    if (typeof body === 'string') {
-      body = JSON.parse(body);
-    }
-
-    const { image, lang } = body;
+    const { image, lang } = req.body;
+    
     if (!image) {
       return res.status(400).json({ error: 'Image data is missing' });
     }
 
-    // Clean base64 string (remove data:image/jpeg;base64, if exists)
+    // Base64 clean up
     const base64Data = image.includes('base64,') ? image.split('base64,')[1] : image;
 
-    // Google AI initialization
+    // 3. AI Setup
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: lang === 'hi'
-          ? `You are the 'Sachi Baat' Personality Engine. Analyze facial features for true character traits. Be extremely honest, bold, and edgy. ALL TEXT OUTPUT MUST BE IN ROMAN URDU (Urdu in English script). JSON structure: { "title": "...", "description": "...", "reportDescription": "...", "darkLine": "...", "traits": ["...", "..."], "weaknesses": ["...", "..."] }`
-          : `Analyze facial features for personality traits. Be unfiltered. JSON structure: { "title": "...", "description": "...", "reportDescription": "...", "darkLine": "...", "traits": ["...", "..."], "weaknesses": ["...", "..."] }`
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = lang === 'hi' 
+      ? "Analyze this person's character from their face. Be bold and edgy. Return ONLY a JSON object in Roman Urdu with these keys: title, description, reportDescription, darkLine, traits (array), weaknesses (array)."
+      : "Analyze this person's character from their face. Return ONLY a JSON object with these keys: title, description, reportDescription, darkLine, traits (array), weaknesses (array).";
 
     const result = await model.generateContent([
       {
@@ -50,26 +42,23 @@ export default async function handler(req: any, res: any) {
           mimeType: "image/jpeg"
         }
       },
-      { text: "Analyze this person's character based on biometric markers and return JSON only." }
+      { text: prompt }
     ]);
 
     const response = await result.response;
-    const text = response.text();
+    let text = response.text();
     
-    // Extract JSON from response (sometimes Gemini adds markdown code blocks)
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const finalJson = jsonMatch ? jsonMatch[0] : text;
+    // 4. JSON Extraction (Zaruri hai kyunki AI kabhi kabhi ```json ... ``` likh deta hai)
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}') + 1;
+    const jsonString = text.substring(jsonStart, jsonEnd);
 
-    return res.status(200).json(JSON.parse(finalJson));
+    return res.status(200).json(JSON.parse(jsonString));
 
   } catch (error: any) {
-    console.error('Full API Error:', error);
-    let message = error.message || 'Something went wrong';
-    
-    if (message.includes('API key not valid')) {
-      message = "Google says your API Key is NOT VALID. Sir, key copy karne mein koi ghalti hui hai.";
-    }
-
-    return res.status(500).json({ error: message });
+    console.error("Server Error:", error);
+    return res.status(500).json({ 
+      error: "AI Response error: " + (error.message || "Unknown error")
+    });
   }
 }
