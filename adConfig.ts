@@ -7,6 +7,16 @@ export const AD_CONFIG = {
   // 1️⃣ GLOBAL PUBLISHER ID: Updated with user's ID
   AD_CLIENT_ID: "ca-pub-6121799382774662", 
 
+
+  <amp-ad width="100vw" height="320"
+     type="adsense"
+     AD_CLIENT_ID="ca-pub-6121799382774662"
+     data-ad-slot="2266945300"
+     data-auto-format="rspv"
+     data-full-width="">
+  <div overflow=""></div>
+</amp-ad>
+
   <amp-ad width="100vw" height="320"
      type="adsense"
      AD_CLIENT_ID="ca-pub-6121799382774662"
@@ -16,11 +26,14 @@ export const AD_CONFIG = {
   <div overflow=""></div>
 </amp-ad>
 
+
+
+
   // 2️⃣ SPECIFIC SLOT IDs: (Replace these with your actual display ad unit IDs from AdSense)
   SLOTS: {
     HEADER: "6759905846",        
     MIDDLE: "2345678901",        
-    BOTTOM: "5678901234",        
+    BOTTOM: "2266945300",        
     INTERSTITIAL: "6789012345",  
   },
 
