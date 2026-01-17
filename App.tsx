@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, PersonalityResult, Language } from './types';
 import AnalysisAnimation from './components/AnalysisAnimation';
@@ -6,7 +5,7 @@ import ResultCard from './components/ResultCard';
 import AdUnit from './components/AdUnit';
 import { GoogleGenAI, Type } from "@google/genai";
 
-const STORAGE_KEY = 'sachi_baat_personality_v17'; 
+const STORAGE_KEY = 'sachi_baat_personality_v18'; 
 
 export const LogoIcon = ({ className = "w-16 h-16 md:w-24 md:h-24 mb-4 md:mb-6" }) => (
   <div className={`${className} relative`}>
@@ -56,15 +55,23 @@ export default function App() {
     setState(AppState.ANALYZING);
   };
 
-  const tryTransitionToResult = () => {
+  const tryTransitionToResult = useCallback(() => {
     if (apiDataRef.current && animationFinishedRef.current) {
       setResult(apiDataRef.current);
       setState(AppState.RESULT);
     }
-  };
+  }, []);
 
   const performAnalysis = async (base64: string) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.API_KEY;
+    
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+      setErrorMessage(lang === 'hi' ? "API Key nahi mili! Apni environment settings check karein." : "API Key missing! Please check your environment configuration.");
+      setState(AppState.ERROR);
+      return;
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     
     const instructions = lang === 'hi' 
       ? `You are 'Tum Kis Type Ke Insaan Ho' Engine. Analyze face. ALL OUTPUT MUST BE IN ROMAN URDU (English letters). 
@@ -89,7 +96,10 @@ export default function App() {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: {
-          parts: [{ inlineData: { data: base64, mimeType: 'image/jpeg' } }, { text: lang === 'hi' ? "Deep analysis of character. Be honest and descriptive in Roman Urdu." : "Deep analysis of character. Be honest and descriptive in English." }]
+          parts: [
+            { inlineData: { data: base64, mimeType: 'image/jpeg' } }, 
+            { text: lang === 'hi' ? "Deep analysis of character. Be honest and descriptive in Roman Urdu." : "Deep analysis of character. Be honest and descriptive in English." }
+          ]
         },
         config: {
           systemInstruction: instructions,
@@ -121,8 +131,8 @@ export default function App() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(finalResult));
       tryTransitionToResult();
     } catch (err: any) {
-      console.error(err);
-      setErrorMessage(lang === 'hi' ? "Analysis fail ho gayi. Internet check karein." : "Analysis failed. Please check your connection.");
+      console.error("AI Error:", err);
+      setErrorMessage(lang === 'hi' ? "Analysis fail ho gayi. Internet check karein ya API Key ki limit check karein." : "Analysis failed. Please check your internet or API Key limits.");
       setState(AppState.ERROR);
     }
   };
@@ -131,14 +141,14 @@ export default function App() {
   const handleAnimationComplete = useCallback(() => {
     animationFinishedRef.current = true;
     tryTransitionToResult();
-  }, []);
+  }, [tryTransitionToResult]);
 
   const handleReset = () => {
     localStorage.removeItem(STORAGE_KEY);
     setResult(null);
     setState(AppState.INITIAL);
   };
-
+  
   const renderPrivacy = () => (
     <div className="max-w-[1400px] mx-auto py-12 md:py-32 px-6 md:px-24 text-white/80 leading-relaxed animate-slide-up bg-[#05070a]">
       <h2 className="text-5xl md:text-[8rem] font-bebas text-white mb-12 md:mb-24 leading-none tracking-tighter">Privacy Policy & Trust Lab Protocol</h2>
