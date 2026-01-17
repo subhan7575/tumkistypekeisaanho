@@ -1,12 +1,14 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
 // Setup environment variables shim
 if (typeof window !== 'undefined') {
-  window.process = window.process || { env: {} };
+  // Using 'any' cast for window to bypass strict NodeJS.Process type requirements for the shim.
+  (window as any).process = (window as any).process || { env: {} };
   // Fallback for API_KEY if not injected
-  window.process.env = window.process.env || {};
+  (window as any).process.env = (window as any).process.env || {};
 }
 
 const container = document.getElementById('root');
