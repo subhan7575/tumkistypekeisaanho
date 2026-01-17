@@ -66,14 +66,14 @@ export default function App() {
   }, []);
 
   const performAnalysis = async (base64: string) => {
-    // Correct way to access injected process.env keys in modern setups
+    // Correct way to access injected process.env keys
     const apiKey = (process.env as any).API_KEY;
     
-    // Check if the key is effectively missing or still the placeholder string
+    // Check if the key is effectively missing
     if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === "") {
       setErrorMessage(lang === 'hi' 
-        ? "API Key Nahi Mili! Vercel Dashboard mein 'API_KEY' set karein aur project ko 'Redeploy' karein. Static deployment mein key inject hona zaroori hai." 
-        : "API Key Missing! Set 'API_KEY' in Vercel and trigger a Redeploy. Static sites need this injected at build time.");
+        ? "Vercel dashboard mein API_KEY nahi mili! Yaad rakhein: Vercel par variables set karne ke baad project ko 'Redeploy' karna zaroori hai. GitHub par key paste na karein!" 
+        : "API_KEY not found in environment. Note: You must Redeploy on Vercel after setting variables. Do not paste key in GitHub!");
       setState(AppState.ERROR);
       return;
     }
@@ -104,7 +104,7 @@ export default function App() {
         contents: {
           parts: [
             { inlineData: { data: base64, mimeType: 'image/jpeg' } }, 
-            { text: "Detailed character analysis based on facial features." }
+            { text: "Character analysis based on biometric face scan." }
           ]
         },
         config: {
@@ -141,8 +141,8 @@ export default function App() {
     } catch (err: any) {
       console.error("AI Error:", err);
       setErrorMessage(lang === 'hi' 
-        ? "Analysis fail ho gayi. Internet check karein ya API Key ki validity check karein." 
-        : "Analysis failed. Please check your connection or API key limits.");
+        ? "Analysis fail ho gayi. Internet ya API Key ki validitiy check karein." 
+        : "Analysis failed. Please check your internet or API key status.");
       setState(AppState.ERROR);
     }
   };
@@ -170,8 +170,8 @@ export default function App() {
         <p className="border-l-4 border-purple-500 pl-8 md:pl-16">Hum aapki privacy ka pura ehtram karte hain. Aapka face data 'In-Memory' process hota hai aur analysis ke foran baad discard kar diya jata hai. Hum koi bhi image apne servers par store nahi karte.</p>
         <p className="opacity-60">This app uses Google Gemini AI for processing. By using this service, you agree to temporary biometric analysis for entertainment purposes only.</p>
         
-        {/* HIDDEN SEO BLOCK */}
-        <div className="mt-32 opacity-[0.02] text-[8px] leading-tight break-words pointer-events-none uppercase tracking-tighter">
+        {/* SEO BLOCK */}
+        <div className="mt-32 opacity-[0.05] text-[10px] leading-tight break-words pointer-events-none uppercase tracking-tighter">
           {SEO_KEYWORDS}
         </div>
       </div>
@@ -189,11 +189,11 @@ export default function App() {
       </div>
       <div className="space-y-12 md:space-y-24 text-xl md:text-4xl font-light max-w-5xl">
         <p className="border-l-4 border-blue-500 pl-8 md:pl-16 font-medium italic">'Sachi Baat' digital biometric scanner aur AI logic ka ek anokha sangam hai jo aapke chehre se aapki shakhsiyat ke raaz nikalta hai.</p>
-        <p className="opacity-60 uppercase tracking-widest text-sm md:text-lg font-black">Powered by Gemini 3 Pro AI Engine</p>
+        <p className="opacity-60 uppercase tracking-widest text-sm md:text-lg font-black">Powered by Gemini 3 AI</p>
         <p>Hamara maqsad social media par ek sachi aur be-baak analysis faraham karna hai jo entertaining bhi ho aur deep bhi.</p>
         
-        {/* HIDDEN SEO BLOCK */}
-        <div className="mt-32 opacity-[0.02] text-[8px] leading-tight break-words pointer-events-none uppercase tracking-tighter">
+        {/* SEO BLOCK */}
+        <div className="mt-32 opacity-[0.05] text-[10px] leading-tight break-words pointer-events-none uppercase tracking-tighter">
           {SEO_KEYWORDS}
         </div>
       </div>
@@ -280,11 +280,10 @@ export default function App() {
           <div className="flex flex-wrap justify-center gap-6 md:gap-12 text-[10px] md:text-sm font-black uppercase tracking-widest">
             <button onClick={() => setState(AppState.ABOUT)} className="hover:text-purple-400 transition-colors">ABOUT</button>
             <button onClick={() => setState(AppState.PRIVACY)} className="hover:text-purple-400 transition-colors">PRIVACY</button>
-            <span className="opacity-20">© 2025 Lab Verified</span>
+            <span className="opacity-20">© 2025</span>
           </div>
         </div>
-        {/* GLOBAL SEO FOOTER - Hidden for aesthetic but visible to Google Bots */}
-        <div className="max-w-[1400px] mx-auto mt-12 opacity-[0.01] text-[8px] leading-relaxed break-words text-center select-none pointer-events-none">
+        <div className="max-w-[1400px] mx-auto mt-12 opacity-[0.02] text-[8px] leading-relaxed break-words text-center select-none pointer-events-none">
           {SEO_KEYWORDS}
         </div>
       </footer>
