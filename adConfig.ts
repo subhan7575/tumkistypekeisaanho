@@ -11,6 +11,16 @@ export const AD_CONFIG = {
   <amp-ad width="100vw" height="320"
      type="adsense"
      AD_CLIENT_ID="ca-pub-6121799382774662"
+     data-ad-slot="9929812904"
+     data-auto-format="rspv"
+     data-full-width="">
+  <div overflow=""></div>
+</amp-ad>
+
+
+  <amp-ad width="100vw" height="320"
+     type="adsense"
+     AD_CLIENT_ID="ca-pub-6121799382774662"
      data-ad-slot="2266945300"
      data-auto-format="rspv"
      data-full-width="">
@@ -34,7 +44,7 @@ export const AD_CONFIG = {
     HEADER: "6759905846",        
     MIDDLE: "2345678901",        
     BOTTOM: "2266945300",        
-    INTERSTITIAL: "6789012345",  
+    INTERSTITIAL: "9929812904",  
   },
 
   // 3️⃣ CUSTOM BANNER ADS
