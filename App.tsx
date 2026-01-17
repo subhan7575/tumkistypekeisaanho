@@ -65,8 +65,11 @@ export default function App() {
   const performAnalysis = async (base64: string) => {
     const apiKey = process.env.API_KEY;
     
-    if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === "") {
-      setErrorMessage(lang === 'hi' ? "API Key nahi mili! Settings check karein." : "API Key missing! Please check your environment configuration.");
+    // Simplified check to avoid blocking valid keys injected via process.env
+    if (!apiKey || apiKey.trim() === "" || apiKey === 'your_gemini_api_key_here') {
+      setErrorMessage(lang === 'hi' 
+        ? "API Key nahi mili! Vercel dashboard mein 'API_KEY' set karein aur redeploy karein." 
+        : "API Key not found! Set 'API_KEY' in Vercel and redeploy.");
       setState(AppState.ERROR);
       return;
     }
@@ -119,9 +122,7 @@ export default function App() {
         }
       });
 
-      if (!response || !response.text) {
-        throw new Error("Empty response from AI");
-      }
+      if (!response.text) throw new Error("Empty AI Response");
 
       const data = JSON.parse(response.text.trim());
       const finalResult: PersonalityResult = {
@@ -136,7 +137,9 @@ export default function App() {
       tryTransitionToResult();
     } catch (err: any) {
       console.error("AI Error:", err);
-      setErrorMessage(lang === 'hi' ? "Analysis fail ho gayi. Internet check karein ya API Key sahi se lagayein." : "Analysis failed. Please check your internet or ensure API Key is valid.");
+      setErrorMessage(lang === 'hi' 
+        ? "Analysis fail ho gayi. Internet check karein ya API Key ki validitiy check karein." 
+        : "Analysis failed. Check your connection or API Key status.");
       setState(AppState.ERROR);
     }
   };
