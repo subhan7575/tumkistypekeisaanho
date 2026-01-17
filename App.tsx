@@ -3,7 +3,6 @@ import { AppState, PersonalityResult, Language } from './types';
 import AnalysisAnimation from './components/AnalysisAnimation';
 import ResultCard from './components/ResultCard';
 import AdUnit from './components/AdUnit';
-import { GoogleGenAI, Type } from "@google/genai";
 
 const STORAGE_KEY = 'sachi_baat_personality_v18'; 
 
@@ -66,68 +65,19 @@ export default function App() {
   }, []);
 
   const performAnalysis = async (base64: string) => {
-    // Correct way to access injected process.env keys
-    const apiKey = (process.env as any).API_KEY;
-    
-    // Check if the key is effectively missing
-    if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === "") {
-      setErrorMessage(lang === 'hi' 
-        ? "Vercel dashboard mein API_KEY nahi mili! Yaad rakhein: Vercel par variables set karne ke baad project ko 'Redeploy' karna zaroori hai. GitHub par key paste na karein!" 
-        : "API_KEY not found in environment. Note: You must Redeploy on Vercel after setting variables. Do not paste key in GitHub!");
-      setState(AppState.ERROR);
-      return;
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
-    
-    const instructions = lang === 'hi' 
-      ? `You are 'Tum Kis Type Ke Insaan Ho' Engine. Analyze face. ALL OUTPUT MUST BE IN ROMAN URDU. 
-         JSON requirements:
-         - title: Catchy Roman Urdu title.
-         - description: Catchy 1-line summary.
-         - reportDescription: A detailed character analysis (3 sentences) in Roman Urdu.
-         - darkLine: A poetic 'Sher' in Roman Urdu.
-         - traits: Exactly 5 strengths in Roman Urdu.
-         - weaknesses: Exactly 4 flaws in Roman Urdu.`
-      : `Analyze face deeply. ALL OUTPUT IN ENGLISH.
-         JSON requirements:
-         - title: Personality title.
-         - description: 1-line summary.
-         - reportDescription: Detailed analysis.
-         - darkLine: Philosophical quote.
-         - traits: 5 strengths.
-         - weaknesses: 4 flaws.`;
-
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: {
-          parts: [
-            { inlineData: { data: base64, mimeType: 'image/jpeg' } }, 
-            { text: "Character analysis based on biometric face scan." }
-          ]
-        },
-        config: {
-          systemInstruction: instructions,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              reportDescription: { type: Type.STRING },
-              darkLine: { type: Type.STRING },
-              traits: { type: Type.ARRAY, items: { type: Type.STRING } },
-              weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } }
-            },
-            required: ["title", "description", "reportDescription", "darkLine", "traits", "weaknesses"]
-          }
-        }
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, lang })
       });
 
-      if (!response.text) throw new Error("Empty AI Response");
+      const data = await response.json();
 
-      const data = JSON.parse(response.text.trim());
+      if (!response.ok) {
+        throw new Error(data.error || 'Server Side Analysis Failed');
+      }
+
       const finalResult: PersonalityResult = {
         id: `TRUTH-${Math.floor(Math.random() * 90000) + 10000}`,
         ...data,
@@ -139,10 +89,10 @@ export default function App() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(finalResult));
       tryTransitionToResult();
     } catch (err: any) {
-      console.error("AI Error:", err);
+      console.error("Analysis Error:", err);
       setErrorMessage(lang === 'hi' 
-        ? "Analysis fail ho gayi. Internet ya API Key ki validitiy check karein." 
-        : "Analysis failed. Please check your internet or API key status.");
+        ? `Error: ${err.message}. Yaad rakhein Vercel par API_KEY dalne ke baad 'Redeploy' karna zaroori hai!` 
+        : `Error: ${err.message}. Make sure to 'Redeploy' on Vercel after adding the API_KEY!`);
       setState(AppState.ERROR);
     }
   };
@@ -168,9 +118,8 @@ export default function App() {
       </div>
       <div className="space-y-12 md:space-y-24 text-xl md:text-4xl font-light max-w-5xl">
         <p className="border-l-4 border-purple-500 pl-8 md:pl-16">Hum aapki privacy ka pura ehtram karte hain. Aapka face data 'In-Memory' process hota hai aur analysis ke foran baad discard kar diya jata hai. Hum koi bhi image apne servers par store nahi karte.</p>
-        <p className="opacity-60">This app uses Google Gemini AI for processing. By using this service, you agree to temporary biometric analysis for entertainment purposes only.</p>
+        <p className="opacity-60">This app uses Google Gemini AI (Secure Server-Side) for processing. We do not store biometric data permanently.</p>
         
-        {/* SEO BLOCK */}
         <div className="mt-32 opacity-[0.05] text-[10px] leading-tight break-words pointer-events-none uppercase tracking-tighter">
           {SEO_KEYWORDS}
         </div>
@@ -189,10 +138,9 @@ export default function App() {
       </div>
       <div className="space-y-12 md:space-y-24 text-xl md:text-4xl font-light max-w-5xl">
         <p className="border-l-4 border-blue-500 pl-8 md:pl-16 font-medium italic">'Sachi Baat' digital biometric scanner aur AI logic ka ek anokha sangam hai jo aapke chehre se aapki shakhsiyat ke raaz nikalta hai.</p>
-        <p className="opacity-60 uppercase tracking-widest text-sm md:text-lg font-black">Powered by Gemini 3 AI</p>
+        <p className="opacity-60 uppercase tracking-widest text-sm md:text-lg font-black">Secure Server-Side Analysis Enabled</p>
         <p>Hamara maqsad social media par ek sachi aur be-baak analysis faraham karna hai jo entertaining bhi ho aur deep bhi.</p>
         
-        {/* SEO BLOCK */}
         <div className="mt-32 opacity-[0.05] text-[10px] leading-tight break-words pointer-events-none uppercase tracking-tighter">
           {SEO_KEYWORDS}
         </div>
@@ -261,9 +209,9 @@ export default function App() {
         {state === AppState.ABOUT && renderAbout()}
 
         {state === AppState.ERROR && (
-          <div className="text-center space-y-10 md:space-y-16 p-8 md:p-24 glass-card rounded-[3rem] md:rounded-[5rem] animate-slide-up max-w-4xl mx-4">
+          <div className="text-center space-y-10 md:space-y-16 p-8 md:p-12 glass-card rounded-[3rem] md:rounded-[5rem] animate-slide-up max-w-4xl mx-4">
             <div className="text-red-500 text-6xl md:text-9xl">✕</div>
-            <h2 className="text-xl md:text-3xl font-bold text-white leading-tight px-4">{errorMessage}</h2>
+            <h2 className="text-lg md:text-2xl font-bold text-white leading-relaxed px-4">{errorMessage}</h2>
             <button onClick={handleReset} className="px-10 md:px-20 py-5 md:py-10 bg-white text-black font-black text-lg md:text-2xl rounded-2xl md:rounded-[3rem] uppercase">Try Again</button>
           </div>
         )}
