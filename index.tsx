@@ -2,9 +2,11 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 
-// Critical for browser-based SDKs that expect process.env
+// Setup environment variables shim
 if (typeof window !== 'undefined') {
-  (window as any).process = (window as any).process || { env: {} };
+  window.process = window.process || { env: {} };
+  // Fallback for API_KEY if not injected
+  window.process.env = window.process.env || {};
 }
 
 const container = document.getElementById('root');
