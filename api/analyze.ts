@@ -1,21 +1,36 @@
 import { GoogleGenAI, Type } from '@google/genai';
 
+// Switching to default nodejs runtime as it's often more stable for environment variables than edge in some regions
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
-export default async function handler(req: Request) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'API_KEY is missing on the server. Please set it in Vercel Dashboard and REDEPLOY.' }), { status: 500 });
+  // Sanitize the API key: remove whitespace and potential quotes accidental paste
+  let apiKey = process.env.API_KEY || '';
+  apiKey = apiKey.trim().replace(/^["']|["']$/g, '');
+
+  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+    return res.status(500).json({ 
+      error: 'API_KEY is missing or not set in Vercel. Please add it to "Environment Variables" in Vercel Dashboard, then go to "Deployments" and click "Redeploy".' 
+    });
+  }
+
+  // Basic check for Gemini key format (usually starts with AIza)
+  if (!apiKey.startsWith('AIza')) {
+    return res.status(400).json({ 
+      error: 'Invalid Key Format. Gemini API keys usually start with "AIza". Please check your key in Google AI Studio.' 
+    });
   }
 
   try {
-    const { image, lang } = await req.json();
+    const { image, lang } = req.body;
+    
+    // Use the latest recommended model for multimodal tasks
     const ai = new GoogleGenAI({ apiKey });
 
     const instructions = lang === 'hi'
@@ -65,15 +80,22 @@ export default async function handler(req: Request) {
     });
 
     const text = response.text;
-    if (!text) throw new Error("No response from AI");
+    if (!text) throw new Error("Google AI returned an empty response.");
 
-    return new Response(text, {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(JSON.parse(text));
 
   } catch (error: any) {
-    console.error('API Error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), { status: 500 });
+    console.error('API Error Details:', error);
+    
+    // Extract a cleaner error message if it's a JSON string from the API
+    let cleanMessage = error.message || 'Internal Server Error';
+    try {
+      if (cleanMessage.includes('{')) {
+        const parsed = JSON.parse(cleanMessage.substring(cleanMessage.indexOf('{')));
+        if (parsed.error?.message) cleanMessage = parsed.error.message;
+      }
+    } catch (e) {}
+
+    return res.status(500).json({ error: cleanMessage });
   }
 }
